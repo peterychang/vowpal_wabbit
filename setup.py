@@ -20,12 +20,41 @@ version_info = sys.version_info
 here = os.path.abspath(os.path.dirname(__file__))
 pkg_path = os.path.join(here, 'python')
 
+def get_deployment_target_osx():
+    if system != 'Darwin':
+        return None
+        
+    # If the MACOSX_DEPLOYMENT_TARGET environment variable is defined, use
+    # it, as it will be the most accurate. Otherwise use the value returned
+    # by platform.mac_ver() provided by the platform module available in
+    # the Python standard library.
+    #
+    # Note that on macOS, distutils.util.get_platform() is not used because
+    # it returns the macOS version on which Python was built which may be
+    # significantly older than the user's current machine.
+    release, _, machine = platform.mac_ver()
+    split_ver = release.split('.')
+    release = '{}.{}'.format(split_ver[0], split_ver[1])
+    release = os.environ.get("MACOSX_DEPLOYMENT_TARGET", release)
+    return release, machine
+
+def run_platform_name():
+    from distutils.util import get_platform
+    if system == 'Darwin':
+        release, machine = get_deployment_target_osx()
+        split_ver = release.split('.')
+        return 'macosx-{}.{}-{}'.format(split_ver[0], split_ver[1], machine)
+    else:
+        return get_platform()
+
+current_platform = run_platform_name()
+
 class Distribution(_distribution):
     if system == 'Windows':
         global_options = _distribution.global_options + [
             ('vcpkg-root=', None, 'Path to vcpkg root. For Windows only.'),
         ]
-
+        
     def __init__(self, attrs=None):
         self.vcpkg_root = None
         _distribution.__init__(self, attrs)
@@ -185,6 +214,13 @@ with open(os.path.join(pkg_path, 'README.rst'), encoding='utf-8') as f:
 config_path = os.path.join(here, 'version.txt')
 with open(config_path, encoding='utf-8') as f:
     version = f.readline().strip()
+    
+# On Macs, get_platform returns the environment the python binaries were built on,
+# not the current environment. This causes build issues.
+# Set the MACOSX_DEPLOYMENT_TARGET environment variable to make CMake happy
+# We'll also need to overwrite the bdist platform to make that happy as well
+if system == 'Darwin':
+    os.environ['MACOSX_DEPLOYMENT_TARGET'] = get_deployment_target_osx()
 
 setup(
     name='vowpalwabbit',
