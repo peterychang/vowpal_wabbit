@@ -207,13 +207,6 @@ with open(config_path, encoding='utf-8') as f:
     
 # On Macs, get_platform returns the environment the python binaries were built on,
 # not the current environment. This causes build issues.
-# Set the MACOSX_DEPLOYMENT_TARGET environment variable to make CMake happy
-# We'll also need to overwrite the bdist platform to make that happy as well
-if system == 'Darwin':
-    os.environ['MACOSX_DEPLOYMENT_TARGET'] = get_deployment_target_osx()
-
-# On Macs, get_platform returns the environment the python binaries were built on,
-# not the current environment. This causes build issues.
 # Set the platform name on OSX into _PYTHON_HOST_PLATFORM, which is used by get_platform()
 if system == 'Darwin':
     os.environ['_PYTHON_HOST_PLATFORM'] = run_platform_name()
