@@ -20,34 +20,24 @@ version_info = sys.version_info
 here = os.path.abspath(os.path.dirname(__file__))
 pkg_path = os.path.join(here, 'python')
 
-def get_deployment_target_osx():
-    if system != 'Darwin':
-        return None
-        
-    # If the MACOSX_DEPLOYMENT_TARGET environment variable is defined, use
-    # it, as it will be the most accurate. Otherwise use the value returned
-    # by platform.mac_ver() provided by the platform module available in
-    # the Python standard library.
-    #
-    # Note that on macOS, distutils.util.get_platform() is not used because
-    # it returns the macOS version on which Python was built which may be
-    # significantly older than the user's current machine.
-    release, _, machine = platform.mac_ver()
-    split_ver = release.split('.')
-    release = '{}.{}'.format(split_ver[0], split_ver[1])
-    release = os.environ.get("MACOSX_DEPLOYMENT_TARGET", release)
-    return release, machine
 
 def run_platform_name():
     from distutils.util import get_platform
-    if system == 'Darwin':
-        release, machine = get_deployment_target_osx()
+    if sys.platform == 'darwin':
+        # If the MACOSX_DEPLOYMENT_TARGET environment variable is defined, use
+        # it, as it will be the most accurate. Otherwise use the value returned
+        # by platform.mac_ver() provided by the platform module available in
+        # the Python standard library.
+        #
+        # Note that on macOS, distutils.util.get_platform() is not used because
+        # it returns the macOS version on which Python was built which may be
+        # significantly older than the user's current machine.
+        release, _, machine = platform.mac_ver()
+        release = os.environ.get("MACOSX_DEPLOYMENT_TARGET", release)
         split_ver = release.split('.')
         return 'macosx-{}.{}-{}'.format(split_ver[0], split_ver[1], machine)
     else:
         return get_platform()
-
-current_platform = run_platform_name()
 
 class Distribution(_distribution):
     if system == 'Windows':
@@ -221,6 +211,12 @@ with open(config_path, encoding='utf-8') as f:
 # We'll also need to overwrite the bdist platform to make that happy as well
 if system == 'Darwin':
     os.environ['MACOSX_DEPLOYMENT_TARGET'] = get_deployment_target_osx()
+
+# On Macs, get_platform returns the environment the python binaries were built on,
+# not the current environment. This causes build issues.
+# Set the platform name on OSX into _PYTHON_HOST_PLATFORM, which is used by get_platform()
+if system == 'Darwin':
+    os.environ['_PYTHON_HOST_PLATFORM'] = run_platform_name()
 
 setup(
     name='vowpalwabbit',
