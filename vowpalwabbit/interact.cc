@@ -123,14 +123,13 @@ void predict_or_learn(interact& in, LEARNER::single_learner& base, example& ec)
     std::cout<< std::endl;*/
 
   // remove 2nd namespace
-  int n2_i = -1;
-  for (size_t i = 0; i < ec.indices.size(); i++)
+  size_t n2_i = 0;
+  size_t indices_size = ec.indices.size();
+  for (; n2_i < indices_size; ++n2_i)
   {
-    if (ec.indices[i] == in.n2)
+    if (ec.indices[n2_i] == in.n2)
     {
-      n2_i = (int)i;
-      memmove(&ec.indices[n2_i], &ec.indices[n2_i + 1], sizeof(unsigned char) * (ec.indices.size() - n2_i - 1));
-      ec.indices.decr();
+      ec.indices.remove(n2_i);
       break;
     }
   }
@@ -140,9 +139,8 @@ void predict_or_learn(interact& in, LEARNER::single_learner& base, example& ec)
     base.learn(ec);
 
   // re-insert namespace into the right position
-  ec.indices.incr();
-  memmove(&ec.indices[n2_i + 1], &ec.indices[n2_i], sizeof(unsigned char) * (ec.indices.size() - n2_i - 1));
-  ec.indices[n2_i] = in.n2;
+  if (n2_i < indices_size)
+    ec.indices.insert(n2_i, in.n2);
 
   f1.deep_copy_from(in.feat_store);
   ec.total_sum_feat_sq = in.total_sum_feat_sq;

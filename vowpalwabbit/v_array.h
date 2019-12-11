@@ -52,16 +52,34 @@ struct v_array
   // ~v_array() {
   //  delete_v();
   // }
-  T last() const { return *(_end - 1); }
-  T pop() { return *(--_end); }
-  bool empty() const { return _begin == _end; }
-  void decr() { _end--; }
-  void incr()
+
+  // last and pop are not bounds checked.
+  // Undefined behavior if they are called on empty v_arrays
+  inline T& last() const { return *(_end - 1); }
+  inline void pop() { (--_end)->~T(); }
+  inline bool empty() const { return _begin == _end; }
+
+  // insert() and remove() don't follow the standard spec, which calls for iterators
+  // instead of indices. But these fn signatures follow our usage better.
+  // These functions do not check bounds, undefined behavior if they are called
+  // on out-of-bounds indices
+  // insert before the element
+  inline void insert(size_t idx, const T& elem)
   {
     if (_end == end_array)
       resize(2 * (end_array - _begin) + 3);
     _end++;
+    memmove(&_begin[idx+1], &_begin[idx], size() - ((idx+1) * sizeof(T)));
+    _begin[idx] = elem;
   }
+  // remove indexed element
+  inline void remove(size_t idx)
+  {
+    _begin[idx].~T();
+    memmove(&_begin[idx], &_begin[idx+1], size() - ((idx+1) * sizeof(T)));
+    --_end;
+  }
+
   T& operator[](size_t i) const { return _begin[i]; }
   inline size_t size() const { return _end - _begin; }
   void resize(size_t length)

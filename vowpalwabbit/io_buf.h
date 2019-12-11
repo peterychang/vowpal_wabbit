@@ -204,7 +204,8 @@ class io_buf
   {
     if (!files.empty())
     {
-      close_file_or_socket(files.pop());
+      close_file_or_socket(files.last());
+      files.pop();
       return true;
     }
     return false;

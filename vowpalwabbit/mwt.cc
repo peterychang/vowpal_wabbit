@@ -130,7 +130,8 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   if (exclude || learn)
     while (!c.indices.empty())
     {
-      unsigned char ns = c.indices.pop();
+      unsigned char ns = c.indices.last();
+      c.indices.pop();
       std::swap(c.feature_space[ns], ec.feature_space[ns]);
     }
 

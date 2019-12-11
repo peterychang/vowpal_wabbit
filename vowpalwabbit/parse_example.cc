@@ -447,7 +447,8 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
         (all->p->words.last().end() == label_space.end() ||
         all->p->words.last().front() == '\''))  // The last field is a tag, so record and strip it off
     {
-      VW::string_view tag = all->p->words.pop();
+      VW::string_view tag = all->p->words.last();
+      all->p->words.pop();
       if (tag.front() == '\'')
         tag.remove_prefix(1);
       push_many(ae->tag, tag.begin(), tag.size());

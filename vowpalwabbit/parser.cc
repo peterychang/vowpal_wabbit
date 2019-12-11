@@ -141,7 +141,8 @@ void reset_source(vw& all, size_t numbits)
         input->close_file();
       else
       {
-        int fd = input->files.pop();
+        int fd = input->files.last();
+        input->files.pop();
         const auto& fps = all.final_prediction_sink;
 
         // If the current popped file is not in the list of final predictions sinks, close it.
