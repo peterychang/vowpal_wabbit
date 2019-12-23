@@ -69,14 +69,14 @@ struct v_array
     if (_end == end_array)
       resize(2 * (end_array - _begin) + 3);
     _end++;
-    memmove(&_begin[idx+1], &_begin[idx], size() - ((idx+1) * sizeof(T)));
+    memmove(&_begin[idx+1], &_begin[idx], (size() - (idx+1)) * sizeof(T));
     _begin[idx] = elem;
   }
   // remove indexed element
   inline void remove(size_t idx)
   {
     _begin[idx].~T();
-    memmove(&_begin[idx], &_begin[idx+1], size() - ((idx+1) * sizeof(T)));
+    memmove(&_begin[idx], &_begin[idx+1], (size() - (idx+1)) * sizeof(T));
     --_end;
   }
 
