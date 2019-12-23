@@ -124,8 +124,8 @@ void predict_or_learn(interact& in, LEARNER::single_learner& base, example& ec)
 
   // remove 2nd namespace
   size_t n2_i = 0;
-  size_t indices_size = ec.indices.size();
-  for (; n2_i < indices_size; ++n2_i)
+  size_t indices_original_size = ec.indices.size();
+  for (; n2_i < indices_original_size; ++n2_i)
   {
     if (ec.indices[n2_i] == in.n2)
     {
@@ -138,8 +138,8 @@ void predict_or_learn(interact& in, LEARNER::single_learner& base, example& ec)
   if (is_learn)
     base.learn(ec);
 
-  // re-insert namespace into the right position
-  if (n2_i < indices_size)
+  // re-insert namespace into the right position (if one was removed)
+  if (n2_i < indices_original_size)
     ec.indices.insert(n2_i, in.n2);
 
   f1.deep_copy_from(in.feat_store);

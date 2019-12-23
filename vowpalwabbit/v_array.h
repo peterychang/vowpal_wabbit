@@ -63,7 +63,7 @@ struct v_array
   // instead of indices. But these fn signatures follow our usage better.
   // These functions do not check bounds, undefined behavior if they are called
   // on out-of-bounds indices
-  // insert before the element
+  // insert before the indexed element
   inline void insert(size_t idx, const T& elem)
   {
     if (_end == end_array)
