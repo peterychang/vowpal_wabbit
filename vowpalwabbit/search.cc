@@ -638,7 +638,7 @@ void del_features_in_top_namespace(search_private& /* priv */, example& ec, size
     //(size_t)ec.indices.back()); }
   }
   features& fs = ec.feature_space[ns];
-  ec.indices.pop();
+  ec.indices.pop_back();
   ec.num_features -= fs.size();
   ec.total_sum_feat_sq -= fs.sum_feat_sq;
   fs.clear();
@@ -1080,7 +1080,7 @@ void allowed_actions_to_label(search_private& priv, size_t ec_cnt, const action*
 template <class T>
 void ensure_size(v_array<T>& A, size_t sz)
 {
-  if ((size_t)(A.end_array - A.begin()) < sz)
+  if (A.capacity() < sz)
     A.resize(sz * 2 + 1);
   A.end() = A.begin() + sz;
 }
@@ -3484,7 +3484,7 @@ action predictor::predict()
       : sch.predict(*ec, my_tag, orA, oracle_actions.size(), cOn, cNa, alA, numAlA, alAcosts, learner_id, weight);
 
   if (condition_on_names.size() > 0)
-    condition_on_names.pop();  // un-null-terminate
+    condition_on_names.pop_back();  // un-null-terminate
   return p;
 }
 }  // namespace Search

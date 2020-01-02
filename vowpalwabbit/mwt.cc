@@ -131,7 +131,7 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
     while (!c.indices.empty())
     {
       unsigned char ns = c.indices.back();
-      c.indices.pop();
+      c.indices.pop_back();
       std::swap(c.feature_space[ns], ec.feature_space[ns]);
     }
 

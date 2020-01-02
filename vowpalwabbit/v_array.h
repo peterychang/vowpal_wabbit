@@ -21,6 +21,7 @@
 #include "vw_exception.h"
 #endif
 
+#include "future_compat.h"
 #include "memory.h"
 
 const size_t erase_point = ~((1u << 10u) - 1u);
@@ -75,23 +76,32 @@ struct v_array
   // ~v_array() {
   //  delete_v();
   // }
-
-  // back and pop are not bounds checked.
-  // Undefined behavior if they are called on empty v_arrays
   inline T& back() { return *(_end - 1); }
   inline const T& back() const { return *(_end - 1); }
-  inline void pop() { (--_end)->~T(); }
+  inline void pop_back() { (--_end)->~T(); }
+
+  VW_DEPRECATED("v_array::last() is deprecated. Use back()")
+  T last() const { return back(); }
+  
+  VW_DEPRECATED("v_array::pop() is deprecated. Use pop_back()")
+  T pop()
+  {
+    T ret = back();
+    pop_back();
+    return ret;
+  }
+  
   inline bool empty() const { return _begin == _end; }
 
-  // insert() and remove() don't follow the standard spec, which calls for iterators
-  // instead of indices. But these fn signatures follow our usage better.
-  // These functions do not check bounds, undefined behavior if they are called
-  // on out-of-bounds indices
-  // insert before the indexed element
-  inline void insert(size_t idx, const T& elem)
+  VW_DEPRECATED("v_array::decr() is deprecated. Use pop_back()")
+  inline void decr() { _end--; }
+  VW_DEPRECATED("v_array::incr() is deprecated.")
+  void incr() { ++_end; }
+  
+  void insert(size_t idx)
   {
     if (_end == end_array)
-      reserve_nocheck(2 * capacity() + 3);
+      resize(2 * capacity() + 3);
     _end++;
     memmove(&_begin[idx + 1], &_begin[idx], (size() - (idx + 1)) * sizeof(T));
     _begin[idx] = elem;
@@ -155,6 +165,27 @@ struct v_array
   {
     if (capacity() < length)
       reserve_nocheck(length);
+  }
+
+  // insert() and remove() don't follow the standard spec, which calls for iterators
+  // instead of indices. But these fn signatures follow our usage better.
+  // These functions do not check bounds, undefined behavior if they are called
+  // on out-of-bounds indices
+  // insert before the indexed element
+  inline void insert(size_t idx, const T& elem)
+  {
+    if (_end == end_array)
+      resize(2 * capacity() + 3);
+    _end++;
+    memmove(&_begin[idx + 1], &_begin[idx], (size() - (idx + 1)) * sizeof(T));
+    _begin[idx] = elem;
+  }
+  // erase indexed element
+  inline void erase(size_t idx)
+  {
+    _begin[idx].~T();
+    memmove(&_begin[idx], &_begin[idx + 1], (size() - (idx + 1)) * sizeof(T));
+    --_end;
   }
 
   void clear()

@@ -142,7 +142,7 @@ void reset_source(vw& all, size_t numbits)
       else
       {
         int fd = input->files.back();
-        input->files.pop();
+        input->files.pop_back();
         const auto& fps = all.final_prediction_sink;
 
         // If the current popped file is not in the list of final predictions sinks, close it.
@@ -209,7 +209,7 @@ void finalize_source(parser* p)
 #else
   int f = fileno(stdin);
 #endif
-  while (!p->input->files.empty() && p->input->files.back() == f) p->input->files.pop();
+  while (!p->input->files.empty() && p->input->files.back() == f) p->input->files.pop_back();
   p->input->close_files();
 
   delete p->input;
@@ -613,7 +613,7 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, features& fs, size_t init
   {
     gram_mask.push_back(gram_mask.back() + 1 + skips);
     addgrams(all, ngram - 1, skip_gram, fs, initial_length, gram_mask, 0);
-    gram_mask.pop();
+    gram_mask.pop_back();
   }
   if (skip_gram > 0 && ngram > 0)
     addgrams(all, ngram, skip_gram - 1, fs, initial_length, gram_mask, skips + 1);

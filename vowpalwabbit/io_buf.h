@@ -172,7 +172,7 @@ class io_buf
     if (space.end_array - space.end() == 0)
     {  // reallocate to twice as much space
       size_t head_loc = head - space.begin();
-      space.reserve(2 * (space.end_array - space.begin()));
+      space.reserve(2 * space.capacity());
       head = space.begin() + head_loc;
     }
     // read more bytes from file up to the remaining allocated space
@@ -205,7 +205,7 @@ class io_buf
     if (!files.empty())
     {
       close_file_or_socket(files.back());
-      files.pop();
+      files.pop_back();
       return true;
     }
     return false;

@@ -382,11 +382,11 @@ void ex_push_dictionary(example_ptr ec, vw_ptr vw, py::dict& dict)
 bool ex_pop_feature(example_ptr ec, unsigned char ns)
 { if (ec->feature_space[ns].size() == 0) return false;
   float val = ec->feature_space[ns].values.back();
-  ec->feature_space[ns].values.pop();
+  ec->feature_space[ns].values.pop_back();
   if (ec->feature_space[ns].indicies.size()> 0)
-    ec->feature_space[ns].indicies.pop();
+    ec->feature_space[ns].indicies.pop_back();
   if (ec->feature_space[ns].space_names.size()> 0)
-    ec->feature_space[ns].space_names.pop();
+    ec->feature_space[ns].space_names.pop_back();
   ec->num_features--;
   ec->feature_space[ns].sum_feat_sq -= val * val;
   ec->total_sum_feat_sq -= val * val;
@@ -403,7 +403,7 @@ void ex_erase_namespace(example_ptr ec, unsigned char ns)
 bool ex_pop_namespace(example_ptr ec)
 { if (ec->indices.size() == 0) return false;
   unsigned char ns = ec->indices.back();
-  ec->indices.pop();
+  ec->indices.pop_back();
   ex_erase_namespace(ec, ns);
   return true;
 }
@@ -448,7 +448,7 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
     if (hit_constant >= 0)
     { for (size_t i=hit_constant; i<N-1; i++)
         ae->indices[i] = ae->indices[i+1];
-      ae->indices.pop();
+      ae->indices.pop_back();
     }
   }
 

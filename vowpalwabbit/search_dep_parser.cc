@@ -171,7 +171,7 @@ size_t transition_hybrid(Search::search &sch, uint64_t a_id, uint32_t idx, uint3
     tags[last] = t_id;
     sch.loss(gold_heads[last] != heads[last] ? 2 : (gold_tags[last] != t_id) ? 1.f : 0.f);
     assert(!stack.empty());
-    stack.pop();
+    stack.pop_back();
     return idx;
   }
   else if (a_id == REDUCE_LEFT)
@@ -185,7 +185,7 @@ size_t transition_hybrid(Search::search &sch, uint64_t a_id, uint32_t idx, uint3
     tags[last] = t_id;
     sch.loss(gold_heads[last] != heads[last] ? 2 : (gold_tags[last] != t_id) ? 1.f : 0.f);
     assert(!stack.empty());
-    stack.pop();
+    stack.pop_back();
     return idx;
   }
   THROW("transition_hybrid failed");
@@ -227,13 +227,13 @@ size_t transition_eager(Search::search &sch, uint64_t a_id, uint32_t idx, uint32
     tags[last] = t_id;
     sch.loss(gold_heads[last] != heads[last] ? 2 : (gold_tags[last] != t_id) ? 1.f : 0.f);
     assert(!stack.empty());
-    stack.pop();
+    stack.pop_back();
     return idx;
   }
   else if (a_id == REDUCE)
   {
     assert(!stack.empty());
-    stack.pop();
+    stack.pop_back();
     return idx;
   }
   THROW("transition_eager failed");
