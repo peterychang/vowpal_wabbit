@@ -110,9 +110,17 @@ struct v_array
   {
     if (_end == end_array)
       resize(2 * capacity() + 3);
-    _end++;
+    ++_end;
     memmove(&_begin[idx + 1], &_begin[idx], (size() - (idx + 1)) * sizeof(T));
-    _begin[idx] = elem;
+    new (&_begin[idx]) T(elem);
+  }
+  inline void insert(size_t idx, T&& elem)
+  {
+    if (_end == end_array)
+      resize(2 * capacity() + 3);
+    ++_end;
+    memmove(&_begin[idx + 1], &_begin[idx], (size() - (idx + 1)) * sizeof(T));
+    new (&_begin[idx]) T(std::move(elem));
   }
   // erase indexed element
   inline void erase(size_t idx)
@@ -146,6 +154,12 @@ struct v_array
     if (_end == end_array)
       resize(2 * capacity() + 3);
     new (_end++) T(new_ele);
+  }
+  void push_back(T&& new_ele)
+  {
+    if (_end == end_array)
+      resize(2 * capacity() + 3);
+    new (_end++) T(std::move(new_ele));
   }
 
   void push_back_unchecked(const T& new_ele) { new (_end++) T(new_ele); }
