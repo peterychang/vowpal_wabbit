@@ -21,6 +21,7 @@
 #include "vw_exception.h"
 #endif
 
+#include "future_compat.h"
 #include "memory.h"
 
 const size_t erase_point = ~((1u << 10u) - 1u);
@@ -52,21 +53,38 @@ struct v_array
   // ~v_array() {
   //  delete_v();
   // }
-  T last() const { return *(_end - 1); }
-  T pop() { return *(--_end); }
-  bool empty() const { return _begin == _end; }
-  void decr() { _end--; }
+  inline T& back() { return *(_end - 1); }
+  inline const T& back() const { return *(_end - 1); }
+  inline void pop_back() { (--_end)->~T(); }
+
+  VW_DEPRECATED("v_array::last() is deprecated. Use back()")
+  T last() const { return back(); }
+  
+  VW_DEPRECATED("v_array::pop() is deprecated. Use pop_back()")
+  T pop()
+  {
+    T ret = back();
+    pop_back();
+    return ret;
+  }
+  
+  inline bool empty() const { return _begin == _end; }
+
+  VW_DEPRECATED("v_array::decr() is deprecated. Use pop_back()")
+  inline void decr() { _end--; }
+  VW_DEPRECATED("v_array::incr() is deprecated.")
   void incr()
   {
     if (_end == end_array)
-      resize(2 * (end_array - _begin) + 3);
+      resize(2 * capacity() + 3);
     _end++;
   }
   T& operator[](size_t i) const { return _begin[i]; }
   inline size_t size() const { return _end - _begin; }
+  inline size_t capacity() const { return end_array - _begin; }
   void resize(size_t length)
   {
-    if ((size_t)(end_array - _begin) != length)
+    if (capacity() != length)
     {
       size_t old_len = _end - _begin;
       T* temp = (T*)realloc(_begin, sizeof(T) * length);
@@ -81,6 +99,27 @@ struct v_array
       _end = _begin + old_len;
       end_array = _begin + length;
     }
+  }
+
+  // insert() and remove() don't follow the standard spec, which calls for iterators
+  // instead of indices. But these fn signatures follow our usage better.
+  // These functions do not check bounds, undefined behavior if they are called
+  // on out-of-bounds indices
+  // insert before the indexed element
+  inline void insert(size_t idx, const T& elem)
+  {
+    if (_end == end_array)
+      resize(2 * capacity() + 3);
+    _end++;
+    memmove(&_begin[idx + 1], &_begin[idx], (size() - (idx + 1)) * sizeof(T));
+    _begin[idx] = elem;
+  }
+  // erase indexed element
+  inline void erase(size_t idx)
+  {
+    _begin[idx].~T();
+    memmove(&_begin[idx], &_begin[idx + 1], (size() - (idx + 1)) * sizeof(T));
+    --_end;
   }
 
   void clear()
@@ -105,7 +144,7 @@ struct v_array
   void push_back(const T& new_ele)
   {
     if (_end == end_array)
-      resize(2 * (end_array - _begin) + 3);
+      resize(2 * capacity() + 3);
     new (_end++) T(new_ele);
   }
 
@@ -115,7 +154,7 @@ struct v_array
   void emplace_back(Args&&... args)
   {
     if (_end == end_array)
-      resize(2 * (end_array - _begin) + 3);
+      resize(2 * capacity() + 3);
     new (_end++) T(std::forward<Args>(args)...);
   }
 
@@ -153,7 +192,7 @@ struct v_array
     if (!contain_sorted(new_ele, index))
     {
       if (_end == end_array)
-        resize(2 * (end_array - _begin) + 3);
+        resize(2 * capacity() + 3);
 
       to_move = size - index;
 
@@ -214,7 +253,7 @@ template <class T>
 void push_many(v_array<T>& v, const T* _begin, size_t num)
 {
   if (v._end + num >= v.end_array)
-    v.resize(std::max(2 * (size_t)(v.end_array - v._begin) + 3, v._end - v._begin + num));
+    v.resize(std::max(2 * v.capacity() + 3, v.size() + num));
 #ifdef _WIN32
   memcpy_s(v._end, v.size() - (num * sizeof(T)), _begin, num * sizeof(T));
 #else
