@@ -149,7 +149,7 @@ class io_buf
     files = v_init<int>();
     currentname = v_init<char>();
     finalname = v_init<char>();
-    space.resize(INITIAL_BUFF_SIZE);
+    space.reserve(INITIAL_BUFF_SIZE);
     head = space.begin();
   }
 
@@ -172,7 +172,7 @@ class io_buf
     if (space.end_array - space.end() == 0)
     {  // reallocate to twice as much space
       size_t head_loc = head - space.begin();
-      space.resize(2 * (space.end_array - space.begin()));
+      space.reserve(2 * (space.end_array - space.begin()));
       head = space.begin() + head_loc;
     }
     // read more bytes from file up to the remaining allocated space
@@ -204,7 +204,7 @@ class io_buf
   {
     if (!files.empty())
     {
-      close_file_or_socket(files.last());
+      close_file_or_socket(files.back());
       files.pop();
       return true;
     }

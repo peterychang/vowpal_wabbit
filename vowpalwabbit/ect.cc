@@ -85,7 +85,7 @@ size_t final_depth(size_t eliminations)
 bool not_empty(v_array<v_array<uint32_t>> const& tournaments)
 {
   auto const first_non_empty_tournament = std::find_if(
-      tournaments.cbegin(), tournaments.cend(), [](v_array<uint32_t>& tournament) { return !tournament.empty(); });
+      tournaments.cbegin(), tournaments.cend(), [](const v_array<uint32_t>& tournament) { return !tournament.empty(); });
   return first_non_empty_tournament != tournaments.cend();
 }
 
@@ -174,7 +174,7 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
           e.directions[direction_index].loser = 0;
       }
       if (tournaments[t].size() % 2 == 1)
-        new_tournaments[t].push_back(tournaments[t].last());
+        new_tournaments[t].push_back(tournaments[t].back());
     }
     e.all_levels.push_back(new_tournaments);
     level++;

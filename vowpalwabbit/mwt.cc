@@ -130,7 +130,7 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   if (exclude || learn)
     while (!c.indices.empty())
     {
-      unsigned char ns = c.indices.last();
+      unsigned char ns = c.indices.back();
       c.indices.pop();
       std::swap(c.feature_space[ns], ec.feature_space[ns]);
     }
@@ -208,7 +208,6 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
   if (read)
   {
     c.policies.resize(policies_size);
-    c.policies.end() = c.policies.begin() + policies_size;
   }
   else
   {
@@ -248,8 +247,7 @@ base_learner* mwt_setup(options_i& options, vw& all)
   for (char i : s) c->namespaces[(unsigned char)i] = true;
   c->all = &all;
 
-  calloc_reserve(c->evals, all.length());
-  c->evals.end() = c->evals.begin() + all.length();
+  c->evals.resize(all.length());
 
   all.delete_prediction = delete_scalars;
   all.p->lp = CB::cb_label;

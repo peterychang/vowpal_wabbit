@@ -381,7 +381,8 @@ void ex_push_dictionary(example_ptr ec, vw_ptr vw, py::dict& dict)
 
 bool ex_pop_feature(example_ptr ec, unsigned char ns)
 { if (ec->feature_space[ns].size() == 0) return false;
-  float val = ec->feature_space[ns].values.pop();
+  float val = ec->feature_space[ns].values.back();
+  ec->feature_space[ns].values.pop();
   if (ec->feature_space[ns].indicies.size()> 0)
     ec->feature_space[ns].indicies.pop();
   if (ec->feature_space[ns].space_names.size()> 0)
@@ -401,7 +402,8 @@ void ex_erase_namespace(example_ptr ec, unsigned char ns)
 
 bool ex_pop_namespace(example_ptr ec)
 { if (ec->indices.size() == 0) return false;
-  unsigned char ns = ec->indices.pop();
+  unsigned char ns = ec->indices.back();
+  ec->indices.pop();
   ex_erase_namespace(ec, ns);
   return true;
 }

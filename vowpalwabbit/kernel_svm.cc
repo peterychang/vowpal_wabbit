@@ -194,8 +194,8 @@ int svm_example::compute_kernels(svm_params& params)
 int svm_example::clear_kernels()
 {
   int rowsize = (int)krow.size();
-  krow.end() = krow.begin();
-  krow.resize(0);
+  krow.clear();
+  krow.shrink_to_fit();
   return -rowsize;
 }
 
@@ -226,9 +226,12 @@ static int make_hot_sv(svm_params& params, size_t svi)
     size_t rowsize = e->krow.size();
     if (svi < rowsize)
     {
-      float kv = e->krow[svi];
-      for (size_t i = svi; i > 0; --i) e->krow[i] = e->krow[i - 1];
-      e->krow[0] = kv;
+      if (svi > 0)
+      {
+        float kv = e->krow[svi];
+        e->krow.erase(svi);
+        e->krow.insert(0, kv);
+      }
     }
     else
     {
@@ -283,16 +286,20 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
         fs.values.resize(len);
         brw = model_file.bin_read_fixed((char*)fs.values.begin(), len * sizeof(feature_value), "");
         if (!brw)
+        {
+          fs.values.clear();
           return 3;
-        fs.values.end() = fs.values.begin() + len;
+        }
 
         len = fs.indicies.size();
         fs.indicies = v_init<feature_index>();
         fs.indicies.resize(len);
         brw = model_file.bin_read_fixed((char*)fs.indicies.begin(), len * sizeof(feature_index), "");
         if (!brw)
+        {
+          fs.indicies.clear();
           return 3;
-        fs.indicies.end() = fs.indicies.begin() + len;
+        }
       }
     }
     else
@@ -345,7 +352,7 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
 
   flat_example* fec = nullptr;
   if (read)
-    model->support_vec.resize(model->num_support);
+    model->support_vec.reserve(model->num_support);
 
   for (uint32_t i = 0; i < model->num_support; i++)
   {
@@ -364,11 +371,11 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
   }
 
   if (read)
-    model->alpha.resize(model->num_support);
+    model->alpha.reserve(model->num_support);
   bin_text_read_write_fixed(
       model_file, (char*)model->alpha.begin(), (uint32_t)model->num_support * sizeof(float), "", read, msg, text);
   if (read)
-    model->delta.resize(model->num_support);
+    model->delta.reserve(model->num_support);
   bin_text_read_write_fixed(
       model_file, (char*)model->delta.begin(), (uint32_t)model->num_support * sizeof(float), "", read, msg, text);
 }

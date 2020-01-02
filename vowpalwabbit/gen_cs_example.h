@@ -253,7 +253,6 @@ void call_cs_ldf(LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::l
   if (prepped_cs_labels.size() < cs_labels.costs.size() + 1)
   {
     prepped_cs_labels.resize(cs_labels.costs.size() + 1);
-    prepped_cs_labels.end() = prepped_cs_labels.end_array;
   }
 
   // 1st: save cb_label (into mydata) and store cs_label for each example, which will be passed into base.learn.

@@ -70,7 +70,7 @@ std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool al
 
 std::ostream& operator<<(std::ostream& os, const v_array<VW::string_view>& ss)
 {
-  VW::string_view* it = ss.cbegin();
+  auto it = ss.cbegin();
 
   if (it == ss.cend())
   {

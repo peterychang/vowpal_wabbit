@@ -141,7 +141,7 @@ void reset_source(vw& all, size_t numbits)
         input->close_file();
       else
       {
-        int fd = input->files.last();
+        int fd = input->files.back();
         input->files.pop();
         const auto& fps = all.final_prediction_sink;
 
@@ -209,7 +209,7 @@ void finalize_source(parser* p)
 #else
   int f = fileno(stdin);
 #endif
-  while (!p->input->files.empty() && p->input->files.last() == f) p->input->files.pop();
+  while (!p->input->files.empty() && p->input->files.back() == f) p->input->files.pop();
   p->input->close_files();
 
   delete p->input;
@@ -415,7 +415,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       // create children
       size_t num_children = all.num_children;
       v_array<int> children = v_init<int>();
-      children.resize(num_children);
+      children.reserve(num_children);
       for (size_t i = 0; i < num_children; i++)
       {
         // fork() returns pid if parent, 0 if child
@@ -587,9 +587,9 @@ void set_done(vw& all)
 void addgrams(vw& all, size_t ngram, size_t skip_gram, features& fs, size_t initial_length, v_array<size_t>& gram_mask,
     size_t skips)
 {
-  if (ngram == 0 && gram_mask.last() < initial_length)
+  if (ngram == 0 && gram_mask.back() < initial_length)
   {
-    size_t last = initial_length - gram_mask.last();
+    size_t last = initial_length - gram_mask.back();
     for (size_t i = 0; i < last; i++)
     {
       uint64_t new_index = fs.indicies[i];
@@ -611,7 +611,7 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, features& fs, size_t init
   }
   if (ngram > 0)
   {
-    gram_mask.push_back(gram_mask.last() + 1 + skips);
+    gram_mask.push_back(gram_mask.back() + 1 + skips);
     addgrams(all, ngram - 1, skip_gram, fs, initial_length, gram_mask, 0);
     gram_mask.pop();
   }
@@ -710,15 +710,36 @@ void setup_example(vw& all, example* ae)
   ae->weight = all.p->lp.get_weight(&ae->l);
 
   if (all.ignore_some)
-    for (unsigned char* i = ae->indices.begin(); i != ae->indices.end(); i++)
-      if (all.ignore[*i])
+  {
+    /*
+    for (size_t i = 0; i < ae->indices.size(); ++i)
+    {
+      auto index = ae->indices[i];
+      if (all.ignore[index])
       {
         // delete namespace
-        ae->feature_space[*i].clear();
-        memmove(i, i + 1, (ae->indices.end() - (i + 1)) * sizeof(*i));
-        ae->indices.end()--;
-        i--;
+        ae->feature_space[index].clear();
+        ae->indices.remove(i);
+        --i;
       }
+    }
+    */
+    size_t i = 0;
+    while (i < ae->indices.size())
+    {
+      auto index = ae->indices[i];
+      if (all.ignore[index])
+      {
+        // delete namespace
+        ae->feature_space[index].clear();
+        ae->indices.erase(i);
+      }
+      else
+      {
+        ++i;
+      }
+    }
+  }
 
   if (!all.ngram_strings.empty())
     generateGrams(all, ae);

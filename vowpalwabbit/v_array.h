@@ -36,6 +36,29 @@ struct v_array
   T* end_array;
   size_t erase_count;
 
+  // private:
+  void reserve_nocheck(size_t length)
+  {
+    if (capacity() == length)
+    {
+      return;
+    }
+    size_t old_len = size();
+
+    T* temp = (T*)realloc(_begin, sizeof(T) * length);
+    if ((temp == nullptr) && ((sizeof(T) * length) > 0))
+    {
+      THROW_OR_RETURN("realloc of " << length << " failed in resize().  out of memory?");
+    }
+    else
+      _begin = temp;
+
+    _end = _begin + std::min(old_len, length);
+    end_array = _begin + length;
+    memset(_end, 0, (end_array - _end) * sizeof(T));
+  }
+
+ public:
   // enable C++ 11 for loops
   inline T*& begin() { return _begin; }
   inline T*& end() { return _end; }
@@ -43,8 +66,8 @@ struct v_array
   inline const T* begin() const { return _begin; }
   inline const T* end() const { return _end; }
 
-  inline T* cbegin() const { return _begin; }
-  inline T* cend() const { return _end; }
+  inline const T* cbegin() const { return _begin; }
+  inline const T* cend() const { return _end; }
 
   // v_array cannot have a user-defined constructor, because it participates in various unions.
   // union members cannot have user-defined constructors.
@@ -53,9 +76,10 @@ struct v_array
   //  delete_v();
   // }
 
-  // last and pop are not bounds checked.
+  // back and pop are not bounds checked.
   // Undefined behavior if they are called on empty v_arrays
-  inline T& last() const { return *(_end - 1); }
+  inline T& back() { return *(_end - 1); }
+  inline const T& back() const { return *(_end - 1); }
   inline void pop() { (--_end)->~T(); }
   inline bool empty() const { return _begin == _end; }
 
@@ -67,49 +91,88 @@ struct v_array
   inline void insert(size_t idx, const T& elem)
   {
     if (_end == end_array)
-      resize(2 * (end_array - _begin) + 3);
+      reserve_nocheck(2 * capacity() + 3);
     _end++;
-    memmove(&_begin[idx+1], &_begin[idx], (size() - (idx+1)) * sizeof(T));
+    memmove(&_begin[idx + 1], &_begin[idx], (size() - (idx + 1)) * sizeof(T));
     _begin[idx] = elem;
   }
-  // remove indexed element
-  inline void remove(size_t idx)
+  // erase indexed element
+  inline void erase(size_t idx)
   {
     _begin[idx].~T();
-    memmove(&_begin[idx], &_begin[idx+1], (size() - (idx+1)) * sizeof(T));
+    memmove(&_begin[idx], &_begin[idx + 1], (size() - (idx + 1)) * sizeof(T));
     --_end;
   }
 
-  T& operator[](size_t i) const { return _begin[i]; }
+  T& operator[](size_t i) { return _begin[i]; }
+  const T& operator[](size_t i) const { return _begin[i]; }
   inline size_t size() const { return _end - _begin; }
+  inline size_t capacity() const { return end_array - _begin; }
+
+  // change the number of elements in the vector
   void resize(size_t length)
   {
-    if ((size_t)(end_array - _begin) != length)
+    auto old_size = size();
+    // if new length is smaller than current size destroy the excess elements
+    for (auto idx = length; idx < old_size; ++idx)
     {
-      size_t old_len = _end - _begin;
-      T* temp = (T*)realloc(_begin, sizeof(T) * length);
-      if ((temp == nullptr) && ((sizeof(T) * length) > 0))
+      _begin[idx].~T();
+    }
+    if (capacity() < length)
+    {
+      reserve(length);
+    }
+    _end = _begin + length;
+    // default construct any newly added elements
+    // TODO: handle non-default constructable objects
+    // requires second interface
+    /*
+    for (auto idx = old_size; idx < length; ++idx)
+    {
+      new (&_begin[idx]) T();
+    }
+    */
+  }
+
+  void shrink_to_fit()
+  {
+    if (size() < capacity())
+    {
+      if (empty())
       {
-        THROW_OR_RETURN("realloc of " << length << " failed in resize().  out of memory?");
+        // realloc on size 0 doesn't have a specified behavior
+        // just shrink to 1 for now (alternatively, call delete_v())
+        reserve_nocheck(1);
       }
       else
-        _begin = temp;
-      if (old_len < length && _begin + old_len != nullptr)
-        memset(_begin + old_len, 0, (length - old_len) * sizeof(T));
-      _end = _begin + old_len;
-      end_array = _begin + length;
+      {
+        reserve_nocheck(size());
+      }
     }
+  }
+  // reserve enough space for the specified number of elements
+  void reserve(size_t length)
+  {
+    if (capacity() < length)
+      reserve_nocheck(length);
   }
 
   void clear()
   {
     if (++erase_count & erase_point)
     {
-      resize(_end - _begin);
+      shrink_to_fit();
       erase_count = 0;
     }
     for (T* item = _begin; item != _end; ++item) item->~T();
     _end = _begin;
+  }
+  void reset()
+  {
+    _begin = nullptr;
+    _end = nullptr;
+    end_array = nullptr;
+    erase_count = 0;
   }
   void delete_v()
   {
@@ -118,12 +181,12 @@ struct v_array
       for (T* item = _begin; item != _end; ++item) item->~T();
       free(_begin);
     }
-    _begin = _end = end_array = nullptr;
+    reset();
   }
   void push_back(const T& new_ele)
   {
     if (_end == end_array)
-      resize(2 * (end_array - _begin) + 3);
+      reserve_nocheck(2 * capacity() + 3);
     new (_end++) T(new_ele);
   }
 
@@ -133,7 +196,7 @@ struct v_array
   void emplace_back(Args&&... args)
   {
     if (_end == end_array)
-      resize(2 * (end_array - _begin) + 3);
+      reserve_nocheck(2 * capacity() + 3);
     new (_end++) T(std::forward<Args>(args)...);
   }
 
@@ -171,7 +234,7 @@ struct v_array
     if (!contain_sorted(new_ele, index))
     {
       if (_end == end_array)
-        resize(2 * (end_array - _begin) + 3);
+        reserve_nocheck(2 * capacity() + 3);
 
       to_move = size - index;
 
@@ -210,6 +273,7 @@ template <class T>
 void copy_array(v_array<T>& dst, const v_array<T>& src)
 {
   dst.clear();
+  dst.reserve(src.size());
   push_many(dst, src._begin, src.size());
 }
 
@@ -218,6 +282,7 @@ template <class T>
 void copy_array_no_memcpy(v_array<T>& dst, const v_array<T>& src)
 {
   dst.clear();
+  dst.reserve(src.size());
   for (T* item = src._begin; item != src._end; ++item) dst.push_back(*item);
 }
 
@@ -225,6 +290,7 @@ template <class T>
 void copy_array(v_array<T>& dst, const v_array<T>& src, T (*copy_item)(T&))
 {
   dst.clear();
+  dst.reserve(src.size());
   for (T* item = src._begin; item != src._end; ++item) dst.push_back(copy_item(*item));
 }
 
@@ -232,7 +298,7 @@ template <class T>
 void push_many(v_array<T>& v, const T* _begin, size_t num)
 {
   if (v._end + num >= v.end_array)
-    v.resize(std::max(2 * (size_t)(v.end_array - v._begin) + 3, v._end - v._begin + num));
+    v.reserve_nocheck(std::max(2 * v.capacity() + 3, v._end - v._begin + num));
 #ifdef _WIN32
   memcpy_s(v._end, v.size() - (num * sizeof(T)), _begin, num * sizeof(T));
 #else

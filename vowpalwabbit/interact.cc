@@ -129,7 +129,7 @@ void predict_or_learn(interact& in, LEARNER::single_learner& base, example& ec)
   {
     if (ec.indices[n2_i] == in.n2)
     {
-      ec.indices.remove(n2_i);
+      ec.indices.erase(n2_i);
       break;
     }
   }

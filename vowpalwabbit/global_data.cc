@@ -315,7 +315,7 @@ vw::vw()
               // updates (see parse_args.cc)
   numpasses = 1;
 
-  final_prediction_sink.begin() = final_prediction_sink.end() = final_prediction_sink.end_array = nullptr;
+  final_prediction_sink = v_init<int>();
   raw_prediction = -1;
   print = print_result;
   print_text = print_raw_text;

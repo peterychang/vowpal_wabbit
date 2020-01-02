@@ -94,7 +94,7 @@ void predict_or_learn_greedy(cb_explore& data, single_learner& base, example& ec
     base.predict(ec);
 
   // pre-allocate pdf
-  probs.resize(data.cbcs.num_actions);
+  probs.reserve(data.cbcs.num_actions);
   for (uint32_t i = 0; i < data.cbcs.num_actions; i++) probs.push_back({i, 0});
   generate_epsilon_greedy(data.epsilon, ec.pred.multiclass - 1, begin_scores(probs), end_scores(probs));
 
@@ -314,11 +314,10 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
   {
     data->cs = (learner<cb_explore, example>*)(as_singleline(all.cost_sensitive));
     data->second_cs_label.costs.resize(num_actions);
-    data->second_cs_label.costs.end() = data->second_cs_label.costs.begin() + num_actions;
     data->cover_probs = v_init<float>();
-    data->cover_probs.resize(num_actions);
+    data->cover_probs.reserve(num_actions);
     data->preds = v_init<uint32_t>();
-    data->preds.resize(data->cover_size);
+    data->preds.reserve(data->cover_size);
     l = &init_learner(data, base, predict_or_learn_cover<true>, predict_or_learn_cover<false>, data->cover_size + 1,
         prediction_type::action_probs);
   }

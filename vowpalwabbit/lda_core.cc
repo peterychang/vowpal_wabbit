@@ -739,7 +739,6 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, example *ec, float)
   ec->pred.scalars.clear();
   ec->pred.scalars.resize(l.topics);
   memcpy(ec->pred.scalars.begin(), new_gamma.begin(), l.topics * sizeof(float));
-  ec->pred.scalars.end() = ec->pred.scalars.begin() + l.topics;
 
   score += theta_kl(l, Elogtheta, new_gamma.begin());
 
@@ -874,7 +873,6 @@ void learn_batch(lda &l)
       l.examples[d]->pred.scalars.clear();
       l.examples[d]->pred.scalars.resize(l.topics);
       memset(l.examples[d]->pred.scalars.begin(), 0, l.topics * sizeof(float));
-      l.examples[d]->pred.scalars.end() = l.examples[d]->pred.scalars.begin() + l.topics;
 
       l.examples[d]->pred.scalars.clear();
       return_example(*l.all, *l.examples[d]);
@@ -909,7 +907,7 @@ void learn_batch(lda &l)
   eta = l.all->eta * l.powf((float)l.example_t, -l.all->power_t);
   minuseta = 1.0f - eta;
   eta *= l.lda_D / batch_size;
-  l.decay_levels.push_back(l.decay_levels.last() + log(minuseta));
+  l.decay_levels.push_back(l.decay_levels.back() + log(minuseta));
 
   l.digammas.clear();
   float additional = (float)(l.all->length()) * l.lda_rho;
@@ -1259,7 +1257,7 @@ void end_examples(lda &l, T &weights)
   for (typename T::iterator iter = weights.begin(); iter != weights.end(); ++iter)
   {
     float decay_component =
-        l.decay_levels.last() - l.decay_levels.end()[(int)(-1 - l.example_t + (&(*iter))[l.all->lda])];
+        l.decay_levels.back() - l.decay_levels.end()[(int)(-1 - l.example_t + (&(*iter))[l.all->lda])];
     float decay = fmin(1.f, correctedExp(decay_component));
 
     weight *wp = &(*iter);
@@ -1354,7 +1352,7 @@ LEARNER::base_learner *lda_setup(options_i &options, vw &all)
     all.p->_shared_data = all.sd;
   }
 
-  ld->v.resize(all.lda * ld->minibatch);
+  ld->v.reserve(all.lda * ld->minibatch);
 
   ld->decay_levels.push_back(0.f);
 

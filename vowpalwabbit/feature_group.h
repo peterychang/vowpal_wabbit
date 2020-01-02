@@ -291,17 +291,11 @@ struct features
    {
      // We need to null out all the v_arrays to prevent double freeing during moves
      auto & v = other.values;
-     v._begin = nullptr;
-     v._end = nullptr;
-     v.end_array = nullptr;
+     v.reset();
      auto & i = other.indicies;
-     i._begin = nullptr;
-     i._end = nullptr;
-     i.end_array = nullptr;
+     i.reset();
      auto & s = other.space_names;
-     s._begin = nullptr;
-     s._end = nullptr;
-     s.end_array = nullptr;
+     s.reset();
      other.sum_feat_sq = 0;
    }
    features & operator=(features&& other)
@@ -312,17 +306,11 @@ struct features
      sum_feat_sq = other.sum_feat_sq;
      // We need to null out all the v_arrays to prevent double freeing during moves
      auto & v = other.values;
-     v._begin = nullptr;
-     v._end = nullptr;
-     v.end_array = nullptr;
+     v.reset();
      auto & i = other.indicies;
-     i._begin = nullptr;
-     i._end = nullptr;
-     i.end_array = nullptr;
+     i.reset();
      auto & s = other.space_names;
-     s._begin = nullptr;
-     s._end = nullptr;
-     s.end_array = nullptr;
+     s.reset();
      other.sum_feat_sq = 0;
      return *this;
    }
@@ -330,11 +318,6 @@ struct features
   inline size_t size() const { return values.size(); }
 
   inline bool nonempty() const { return !values.empty(); }
-
-  void free_space_names(size_t i)
-  {
-    for (; i < space_names.size(); i++) space_names[i].~audit_strings_ptr();
-  }
 
   features_value_index_audit_range values_indices_audit() { return {this}; }
 
@@ -353,30 +336,22 @@ struct features
 
   void truncate_to(const features_value_iterator& pos)
   {
-    ssize_t i = pos._begin - values.begin();
-    values.end() = pos._begin;
-    if (indicies.end() != indicies.begin())
-      indicies.end() = indicies.begin() + i;
-    if (space_names.begin() != space_names.end())
-    {
-      free_space_names((size_t)i);
-      space_names.end() = space_names.begin() + i;
-    }
+    truncate_to(pos._begin - values.begin());
   }
 
-  void truncate_to(size_t i)
+  void truncate_to(const size_t& i)
   {
-    values.end() = values.begin() + i;
-    if (indicies.end() != indicies.begin())
-      indicies.end() = indicies.begin() + i;
-    if (space_names.begin() != space_names.end())
+    values.resize(i);
+    if (!indicies.empty())
+      indicies.resize(i);
+    if (!space_names.empty())
     {
-      free_space_names(i);
-      space_names.end() = space_names.begin() + i;
+      space_names.clear();
+      space_names.resize(i);
     }
   }
 
-  void push_back(feature_value v, feature_index i)
+  void push_back(const feature_value& v, const feature_index& i)
   {
     values.push_back(v);
     indicies.push_back(i);
