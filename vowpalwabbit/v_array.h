@@ -170,10 +170,14 @@ struct v_array
   // insert() and remove() don't follow the standard spec, which calls for iterators
   // instead of indices. But these fn signatures follow our usage better.
   // These functions do not check bounds, undefined behavior if they are called
-  // on out-of-bounds indices
+  // on out-of-bounds indices.
+  // NOTE: this function is only safe for trivially copyable objects
+  // any object that contains internal pointers or refernces will break
+  // when using these functions
   // insert before the indexed element
   inline void insert(size_t idx, const T& elem)
   {
+    assert(idx <= size());
     if (_end == end_array)
       resize(2 * capacity() + 3);
     ++_end;
@@ -182,6 +186,7 @@ struct v_array
   }
   inline void insert(size_t idx, T&& elem)
   {
+    assert(idx <= size());
     if (_end == end_array)
       resize(2 * capacity() + 3);
     ++_end;
@@ -191,6 +196,7 @@ struct v_array
   // erase indexed element
   inline void erase(size_t idx)
   {
+    assert(idx < size());
     _begin[idx].~T();
     memmove(&_begin[idx], &_begin[idx + 1], (size() - (idx + 1)) * sizeof(T));
     --_end;
