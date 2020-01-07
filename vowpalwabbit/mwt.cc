@@ -34,6 +34,16 @@ struct mwt
   features feature_space[256];
   vw* all;
 
+  mwt()
+      : evals(v_init<policy_data>())
+      , observation(nullptr)
+      , policies(v_init<uint64_t>())
+      , total(0)
+      , num_classes(0)
+      , learn(false)
+      , indices(v_init<namespace_index>())
+      , all(nullptr)
+  {}
   ~mwt()
   {
     evals.delete_v();
@@ -207,7 +217,7 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
 
   if (read)
   {
-    c.policies.resize(policies_size);
+    c.policies.actual_resize(policies_size);
   }
   else
   {
@@ -247,7 +257,7 @@ base_learner* mwt_setup(options_i& options, vw& all)
   for (char i : s) c->namespaces[(unsigned char)i] = true;
   c->all = &all;
 
-  c->evals.resize(all.length());
+  c->evals.actual_resize(all.length());
 
   all.delete_prediction = delete_scalars;
   all.p->lp = CB::cb_label;

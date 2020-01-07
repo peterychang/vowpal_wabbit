@@ -341,13 +341,13 @@ struct features
 
   void truncate_to(const size_t& i)
   {
-    values.resize(i);
+    values.actual_resize(i);
     if (!indicies.empty())
-      indicies.resize(i);
+      indicies.actual_resize(i);
     if (!space_names.empty())
     {
-      space_names.clear();
-      space_names.resize(i);
+      space_names.clear_noshrink();
+      space_names.actual_resize(i);
     }
   }
 

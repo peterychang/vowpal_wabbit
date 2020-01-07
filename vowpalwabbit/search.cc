@@ -930,9 +930,9 @@ inline void cs_costs_erase(bool isCB, polylabel& ld)
 inline void cs_costs_resize(bool isCB, polylabel& ld, size_t new_size)
 {
   if (isCB)
-    ld.cb.costs.resize(new_size);
+    ld.cb.costs.reserve(new_size);
   else
-    ld.cs.costs.resize(new_size);
+    ld.cs.costs.reserve(new_size);
 }
 
 inline void cs_cost_push_back(bool isCB, polylabel& ld, uint32_t index, float value)
@@ -1081,8 +1081,8 @@ template <class T>
 void ensure_size(v_array<T>& A, size_t sz)
 {
   if (A.capacity() < sz)
-    A.resize(sz * 2 + 1);
-  A.end() = A.begin() + sz;
+    A.reserve(sz * 2 + 1);
+  A.actual_resize(sz);
 }
 
 template <class T>
@@ -1096,15 +1096,15 @@ void push_at(v_array<T>& v, T item, size_t pos)
     {
       // there's enough memory, just not enough filler
       memset(v.end(), 0, sizeof(T) * (pos - v.size()));
+      v.actual_resize(pos + 1);
       v.begin()[pos] = item;
-      v.end() = v.begin() + pos + 1;
     }
     else
     {
       // there's not enough memory
-      v.resize(2 * pos + 3);
+      v.reserve(2 * pos + 3);
+      v.actual_resize(pos + 1);
       v.begin()[pos] = item;
-      v.end() = v.begin() + pos + 1;
     }
   }
 }

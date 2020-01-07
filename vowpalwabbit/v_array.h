@@ -82,7 +82,7 @@ struct v_array
 
   VW_DEPRECATED("v_array::last() is deprecated. Use back()")
   T last() const { return back(); }
-  
+
   VW_DEPRECATED("v_array::pop() is deprecated. Use pop_back()")
   T pop()
   {
@@ -90,25 +90,44 @@ struct v_array
     pop_back();
     return ret;
   }
-  
+
   inline bool empty() const { return _begin == _end; }
 
   VW_DEPRECATED("v_array::decr() is deprecated. Use pop_back()")
   inline void decr() { _end--; }
   VW_DEPRECATED("v_array::incr() is deprecated.")
   void incr() { ++_end; }
-  
-  void insert(size_t idx)
+
+  // insert() and remove() don't follow the standard spec, which calls for iterators
+  // instead of indices. But these fn signatures follow our usage better.
+  // These functions do not check bounds, undefined behavior if they are called
+  // on out-of-bounds indices.
+  // NOTE: this function is only safe for trivially copyable objects
+  // any object that contains internal pointers or refernces will break
+  // when using these functions
+  // insert before the indexed element
+  inline void insert(size_t idx, const T& elem)
   {
+    assert(idx <= size());
     if (_end == end_array)
-      resize(2 * capacity() + 3);
-    _end++;
+      reserve_nocheck(2 * capacity() + 3);
+    ++_end;
     memmove(&_begin[idx + 1], &_begin[idx], (size() - (idx + 1)) * sizeof(T));
-    _begin[idx] = elem;
+    new (&_begin[idx]) T(elem);
+  }
+  inline void insert(size_t idx, T&& elem)
+  {
+    assert(idx <= size());
+    if (_end == end_array)
+      reserve_nocheck(2 * capacity() + 3);
+    ++_end;
+    memmove(&_begin[idx + 1], &_begin[idx], (size() - (idx + 1)) * sizeof(T));
+    new (&_begin[idx]) T(std::move(elem));
   }
   // erase indexed element
   inline void erase(size_t idx)
   {
+    assert(idx < size());
     _begin[idx].~T();
     memmove(&_begin[idx], &_begin[idx + 1], (size() - (idx + 1)) * sizeof(T));
     --_end;
@@ -119,8 +138,14 @@ struct v_array
   inline size_t size() const { return _end - _begin; }
   inline size_t capacity() const { return end_array - _begin; }
 
+  // maintain the original (deprecated) interface for compatibility. To be removed in VW 10
+  VW_DEPRECATED("v_array::resize() is deprecated. Use reserve() instead. \
+For standard resize behavior, use actual_resize(). The function names will be re-aligned in VW 10")
+  void resize(size_t length) { reserve_nocheck(length); }
+
   // change the number of elements in the vector
-  void resize(size_t length)
+  // to be renamed to resize() in VW 10
+  void actual_resize(size_t length)
   {
     auto old_size = size();
     // if new length is smaller than current size destroy the excess elements
@@ -130,7 +155,7 @@ struct v_array
     }
     if (capacity() < length)
     {
-      reserve(length);
+      reserve_nocheck(length);
     }
     _end = _begin + length;
     // default construct any newly added elements
@@ -161,45 +186,17 @@ struct v_array
     }
   }
   // reserve enough space for the specified number of elements
-  void reserve(size_t length)
+  inline void reserve(size_t length)
   {
     if (capacity() < length)
       reserve_nocheck(length);
   }
 
-  // insert() and remove() don't follow the standard spec, which calls for iterators
-  // instead of indices. But these fn signatures follow our usage better.
-  // These functions do not check bounds, undefined behavior if they are called
-  // on out-of-bounds indices.
-  // NOTE: this function is only safe for trivially copyable objects
-  // any object that contains internal pointers or refernces will break
-  // when using these functions
-  // insert before the indexed element
-  inline void insert(size_t idx, const T& elem)
+  // Don't modify the buffer size, just clear the elements
+  inline void clear_noshrink()
   {
-    assert(idx <= size());
-    if (_end == end_array)
-      resize(2 * capacity() + 3);
-    ++_end;
-    memmove(&_begin[idx + 1], &_begin[idx], (size() - (idx + 1)) * sizeof(T));
-    new (&_begin[idx]) T(elem);
-  }
-  inline void insert(size_t idx, T&& elem)
-  {
-    assert(idx <= size());
-    if (_end == end_array)
-      resize(2 * capacity() + 3);
-    ++_end;
-    memmove(&_begin[idx + 1], &_begin[idx], (size() - (idx + 1)) * sizeof(T));
-    new (&_begin[idx]) T(std::move(elem));
-  }
-  // erase indexed element
-  inline void erase(size_t idx)
-  {
-    assert(idx < size());
-    _begin[idx].~T();
-    memmove(&_begin[idx], &_begin[idx + 1], (size() - (idx + 1)) * sizeof(T));
-    --_end;
+    for (T* item = _begin; item != _end; ++item) item->~T();
+    _end = _begin;
   }
 
   void clear()
@@ -209,8 +206,7 @@ struct v_array
       shrink_to_fit();
       erase_count = 0;
     }
-    for (T* item = _begin; item != _end; ++item) item->~T();
-    _end = _begin;
+    clear_noshrink();
   }
   void reset()
   {
@@ -237,7 +233,7 @@ struct v_array
   void push_back(T&& new_ele)
   {
     if (_end == end_array)
-      resize(2 * capacity() + 3);
+      reserve_nocheck(2 * capacity() + 3);
     new (_end++) T(std::move(new_ele));
   }
 

@@ -194,8 +194,8 @@ int svm_example::compute_kernels(svm_params& params)
 int svm_example::clear_kernels()
 {
   int rowsize = (int)krow.size();
+  // should we be deleting krow here? Originally the code resized the buffer to 0
   krow.clear();
-  krow.shrink_to_fit();
   return -rowsize;
 }
 
@@ -283,7 +283,7 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
         features& fs = fec->fs;
         size_t len = fs.size();
         fs.values = v_init<feature_value>();
-        fs.values.resize(len);
+        fs.values.actual_resize(len);
         brw = model_file.bin_read_fixed((char*)fs.values.begin(), len * sizeof(feature_value), "");
         if (!brw)
         {
@@ -293,7 +293,7 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
 
         len = fs.indicies.size();
         fs.indicies = v_init<feature_index>();
-        fs.indicies.resize(len);
+        fs.indicies.actual_resize(len);
         brw = model_file.bin_read_fixed((char*)fs.indicies.begin(), len * sizeof(feature_index), "");
         if (!brw)
         {

@@ -49,7 +49,7 @@ void comp_io_buf::reset_file(int f)
 {
   gzFile fil = gz_files[f];
   gzseek(fil, 0, SEEK_SET);
-  space.clear();
+  space.clear_noshrink();
   head = space.begin();
 }
 

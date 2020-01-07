@@ -313,7 +313,7 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
   if (options.was_supplied("cover"))
   {
     data->cs = (learner<cb_explore, example>*)(as_singleline(all.cost_sensitive));
-    data->second_cs_label.costs.resize(num_actions);
+    data->second_cs_label.costs.actual_resize(num_actions);
     data->cover_probs = v_init<float>();
     data->cover_probs.reserve(num_actions);
     data->preds = v_init<uint32_t>();
