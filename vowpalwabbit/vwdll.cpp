@@ -368,7 +368,7 @@ public:
 
     virtual bool close_file() {
        if (files.size() > 0) {
-            files.pop();
+            files.pop_back();
             return true;
         }
         return false;

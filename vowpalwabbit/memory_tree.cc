@@ -33,14 +33,14 @@ void remove_at_index(v_array<T>& array, uint32_t index)
   }
   if (index == array.size() - 1)
   {
-    array.pop();
+    array.pop_back();
     return;
   }
   for (size_t i = index + 1; i < array.size(); i++)
   {
     array[i - 1] = array[i];
   }
-  array.pop();
+  array.pop_back();
   return;
 }
 

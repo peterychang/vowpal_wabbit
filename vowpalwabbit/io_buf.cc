@@ -24,7 +24,7 @@ size_t io_buf::buf_read(char*& pointer, size_t n)
       size_t left = space.end() - head;
       memmove(space.begin(), head, left);
       head = space.begin();
-      space.end() = space.begin() + left;
+      space.resize(left);
     }
     if (fill(files[current]) > 0)   // read more bytes from current file if present
       return buf_read(pointer, n);  // more bytes are read.
@@ -72,7 +72,7 @@ size_t readto(io_buf& i, char*& pointer, char terminal)
       size_t left = i.space.end() - i.head;
       memmove(i.space.begin(), i.head, left);
       i.head = i.space.begin();
-      i.space.end() = i.space.begin() + left;
+      i.space.resize(left);
       pointer = i.space.end();
     }
     if (i.current < i.files.size() && i.fill(i.files[i.current]) > 0)  // more bytes are read.
@@ -103,7 +103,7 @@ void io_buf::buf_write(char*& pointer, size_t n)
       flush();
     else  // Array is short, so increase size.
     {
-      space.resize(2 * (space.end_array - space.begin()));
+      space.reserve(2 * space.capacity());
       space.end() = space.begin();
       head = space.begin();
     }

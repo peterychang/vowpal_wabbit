@@ -49,7 +49,7 @@ void comp_io_buf::reset_file(int f)
 {
   gzFile fil = gz_files[f];
   gzseek(fil, 0, SEEK_SET);
-  space.end() = space.begin();
+  space.clear_noshrink();
   head = space.begin();
 }
 
@@ -84,7 +84,7 @@ bool comp_io_buf::close_file()
     gzclose(gz_files.back());
     gz_files.pop_back();
     if (!files.empty())
-      files.pop();
+      files.pop_back();
     return true;
   }
   return false;

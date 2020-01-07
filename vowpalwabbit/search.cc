@@ -617,7 +617,7 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
   uint64_t idx2 = ((idx & mask) >> ss) & mask;
   features& fs = priv.dat_new_feature_ec->feature_space[priv.dat_new_feature_namespace];
   fs.push_back(val * priv.dat_new_feature_value, ((priv.dat_new_feature_idx + idx2) << ss));
-  cdbg << "adding: " << fs.indicies.last() << ':' << fs.values.last() << endl;
+  cdbg << "adding: " << fs.indicies.back() << ':' << fs.values.back() << endl;
   if (priv.all->audit)
   {
     std::stringstream temp;
@@ -628,17 +628,17 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
 
 void del_features_in_top_namespace(search_private& /* priv */, example& ec, size_t ns)
 {
-  if ((ec.indices.size() == 0) || (ec.indices.last() != ns))
+  if ((ec.indices.size() == 0) || (ec.indices.back() != ns))
   {
     return;
     // if (ec.indices.size() == 0)
     //{ THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was empty"); }
     // else
     //{ THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was " <<
-    //(size_t)ec.indices.last()); }
+    //(size_t)ec.indices.back()); }
   }
   features& fs = ec.feature_space[ns];
-  ec.indices.decr();
+  ec.indices.pop_back();
   ec.num_features -= fs.size();
   ec.total_sum_feat_sq -= fs.sum_feat_sq;
   fs.clear();
@@ -895,7 +895,7 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
 
 void del_example_conditioning(search_private& priv, example& ec)
 {
-  if ((ec.indices.size() > 0) && (ec.indices.last() == conditioning_namespace))
+  if ((ec.indices.size() > 0) && (ec.indices.back() == conditioning_namespace))
     del_features_in_top_namespace(priv, ec, conditioning_namespace);
 }
 
@@ -930,9 +930,9 @@ inline void cs_costs_erase(bool isCB, polylabel& ld)
 inline void cs_costs_resize(bool isCB, polylabel& ld, size_t new_size)
 {
   if (isCB)
-    ld.cb.costs.resize(new_size);
+    ld.cb.costs.reserve(new_size);
   else
-    ld.cs.costs.resize(new_size);
+    ld.cs.costs.reserve(new_size);
 }
 
 inline void cs_cost_push_back(bool isCB, polylabel& ld, uint32_t index, float value)
@@ -1080,9 +1080,9 @@ void allowed_actions_to_label(search_private& priv, size_t ec_cnt, const action*
 template <class T>
 void ensure_size(v_array<T>& A, size_t sz)
 {
-  if ((size_t)(A.end_array - A.begin()) < sz)
-    A.resize(sz * 2 + 1);
-  A.end() = A.begin() + sz;
+  if (A.capacity() < sz)
+    A.reserve(sz * 2 + 1);
+  A.actual_resize(sz);
 }
 
 template <class T>
@@ -1096,15 +1096,15 @@ void push_at(v_array<T>& v, T item, size_t pos)
     {
       // there's enough memory, just not enough filler
       memset(v.end(), 0, sizeof(T) * (pos - v.size()));
+      v.actual_resize(pos + 1);
       v.begin()[pos] = item;
-      v.end() = v.begin() + pos + 1;
     }
     else
     {
       // there's not enough memory
-      v.resize(2 * pos + 3);
+      v.reserve(2 * pos + 3);
+      v.actual_resize(pos + 1);
       v.begin()[pos] = item;
-      v.end() = v.begin() + pos + 1;
     }
   }
 }
@@ -3483,7 +3483,7 @@ action predictor::predict()
       : sch.predict(*ec, my_tag, orA, oracle_actions.size(), cOn, cNa, alA, numAlA, alAcosts, learner_id, weight);
 
   if (condition_on_names.size() > 0)
-    condition_on_names.pop();  // un-null-terminate
+    condition_on_names.pop_back();  // un-null-terminate
   return p;
 }
 }  // namespace Search
