@@ -177,7 +177,7 @@ class ezexample
 
       current_seed = past_seeds.back();
       past_seeds.pop_back();
-      ec->indices.pop();
+      ec->indices.pop_back();
       example_changed_since_prediction = true;
     }
   }

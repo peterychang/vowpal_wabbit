@@ -84,7 +84,7 @@ bool comp_io_buf::close_file()
     gzclose(gz_files.back());
     gz_files.pop_back();
     if (!files.empty())
-      files.pop();
+      files.pop_back();
     return true;
   }
   return false;

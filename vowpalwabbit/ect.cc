@@ -174,7 +174,7 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
           e.directions[direction_index].loser = 0;
       }
       if (tournaments[t].size() % 2 == 1)
-        new_tournaments[t].push_back(tournaments[t].last());
+        new_tournaments[t].push_back(tournaments[t].back());
     }
     e.all_levels.push_back(new_tournaments);
     level++;

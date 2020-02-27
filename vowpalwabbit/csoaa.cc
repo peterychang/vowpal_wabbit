@@ -228,7 +228,7 @@ void unsubtract_example(example* ec)
     return;
   }
 
-  if (ec->indices.last() != wap_ldf_namespace)
+  if (ec->indices.back() != wap_ldf_namespace)
   {
     std::cerr
         << "internal error (bug): trying to unsubtract_example, but either it wasn't added, or something was added "
@@ -241,7 +241,7 @@ void unsubtract_example(example* ec)
   ec->num_features -= fs.size();
   ec->total_sum_feat_sq -= fs.sum_feat_sq;
   fs.clear();
-  ec->indices.decr();
+  ec->indices.pop_back();
 }
 
 void make_single_prediction(ldf& data, single_learner& base, example& ec)
